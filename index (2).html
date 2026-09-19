@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>SCORVEX — Action RPG</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050812;color:#fff;font-family:Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center}
+#wrap{position:relative;width:min(1100px,100vw);height:min(720px,100vh);background:#080d18;overflow:hidden}
+canvas{width:100%;height:100%;display:block;background:#09111e}
+.panel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(3,7,18,.97),rgba(8,20,35,.94));z-index:20;text-align:center}
+.logo{font-size:clamp(48px,9vw,92px);font-weight:900;letter-spacing:8px;color:#5ff7ff;text-shadow:0 0 12px #19d9ff,0 0 35px #007dff;margin:0 0 8px}
+.subtitle{color:#a9c8df;margin:0 0 18px;letter-spacing:2px}
+.pillars{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:12px;width:min(760px,92vw);margin:0 auto 20px}
+.pillar{padding:15px 12px;border:1px solid #55eaff55;border-radius:16px;background:linear-gradient(160deg,#0d2033dd,#07101ddd);box-shadow:inset 0 0 25px #00bfff0a,0 8px 25px #0005;transition:.2s}
+.pillar:hover{transform:translateY(-4px);border-color:#55eaffaa}
+.picon{font-size:30px;margin-bottom:6px}.pillar b{display:block;color:#5ff7ff;letter-spacing:1px}.pillar span{display:block;color:#9bb4c7;font-size:12px;margin-top:5px}
+button{border:1px solid #38e9ff;background:#0c2334;color:#fff;padding:12px 22px;border-radius:10px;font-weight:800;cursor:pointer;margin:5px;box-shadow:0 0 12px #00d9ff33}
+button:hover{background:#123d58;transform:translateY(-1px)}
+.hidden{display:none!important}
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+.top{display:flex;justify-content:space-between;gap:12px;padding:12px;font-weight:800;text-shadow:0 2px 3px #000}
+.badge{background:#06101dcc;border:1px solid #3de7ff66;border-radius:10px;padding:7px 10px}
+#bars{position:absolute;left:14px;top:52px;width:270px}
+.bar{height:17px;background:#182331;border:1px solid #fff3;border-radius:8px;overflow:hidden;margin:5px 0}
+.fill{height:100%;transition:width .15s}
+.hp{background:linear-gradient(90deg,#ff355d,#ff7b42)}
+.xp{background:linear-gradient(90deg,#8b5cff,#24cfff)}
+.energy{background:linear-gradient(90deg,#00e8ff,#55ffab)}
+#mission{position:absolute;right:14px;top:52px;max-width:260px;background:#06101dcc;border:1px solid #fff2;border-radius:10px;padding:9px;font-size:13px}
+#touch{position:absolute;inset:auto 0 15px 0;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none}
+.touchGroup{pointer-events:auto;display:grid;grid-template-columns:repeat(3,52px);gap:5px}
+.touchBtn{width:52px;height:52px;border-radius:14px;background:#07192add;border:1px solid #58eaff88;color:#fff;font-size:20px;touch-action:none}
+.touchBtn.big{width:65px;height:65px;border-radius:50%;font-size:22px}
+#pauseBtn{position:absolute;right:12px;top:12px;pointer-events:auto}
+#toast{position:absolute;left:50%;top:20%;transform:translateX(-50%);background:#06111ee8;border:1px solid #58eaff;border-radius:12px;padding:12px 18px;opacity:0;transition:.3s;z-index:10}
+#shop{display:none;position:absolute;inset:0;background:#050a14ee;z-index:30;align-items:center;justify-content:center}
+.shopBox{background:#0b1726;border:1px solid #55eaff88;border-radius:18px;padding:25px;width:min(650px,92vw)}
+.items{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.item{border:1px solid #fff2;border-radius:12px;padding:12px;background:#07101c}
+.small{font-size:12px;color:#9bb4c7}
+@media(max-width:700px){.pillars{grid-template-columns:1fr;gap:7px;width:min(420px,90vw)}.pillar{padding:9px}.picon{display:inline;margin-right:6px;font-size:20px}.pillar span{display:none}#mission{max-width:190px;font-size:11px}#bars{width:190px}.top{font-size:12px}.touchGroup{grid-template-columns:repeat(3,44px)}.touchBtn{width:44px;height:44px}.touchBtn.big{width:58px;height:58px}}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="game"></canvas>
+
+<div id="menu" class="panel">
+  <div class="logo">SCORVEX</div>
+  <p class="subtitle">ACTION • ADVENTURE • RPG</p>
+  <div class="pillars">
+    <div class="pillar"><div class="picon">⚔️</div><b>COMBATE</b><span>Derrota enemigos y jefes.</span></div>
+    <div class="pillar"><div class="picon">🌌</div><b>EXPLORACIÓN</b><span>Supera zonas y desbloquea niveles.</span></div>
+    <div class="pillar"><div class="picon">👑</div><b>PROGRESIÓN</b><span>Mejora armas, habilidades y poder.</span></div>
+  </div>
+  <button id="start">⚔️ JUGAR</button>
+  <button id="continue">💾 CONTINUAR</button>
+  <button id="how">🎮 CONTROLES</button>
+  <p class="small">WASD/Flechas: mover · ESPACIO: atacar · E: habilidad · P: pausa · T: tienda</p>
+</div>
+
+<div id="pause" class="panel hidden">
+  <h1>⏸️ PAUSA</h1>
+  <button id="resume">Continuar</button>
+  <button id="restart">Reiniciar</button>
+  <button id="menuBtn">Menú</button>
+</div>
+
+<div id="hud" class="hidden">
+  <div class="top">
+    <div class="badge">⚔️ SCORVEX</div>
+    <div class="badge">Nivel <span id="level">1</span> · ⭐ <span id="score">0</span> · 💰 <span id="coins">0</span></div>
+  </div>
+  <div id="bars">
+    ❤️ <span id="hpText">100/100</span><div class="bar"><div id="hp" class="fill hp"></div></div>
+    ⚡ Energía<div class="bar"><div id="energy" class="fill energy"></div></div>
+    ✨ EXP<div class="bar"><div id="xp" class="fill xp"></div></div>
+  </div>
+  <div id="mission">
+  <b>🎯 MISIÓN</b>: derrota enemigos<br><b id="missionText">0/5</b>
+  <hr style="border:0;border-top:1px solid #fff2">
+  <span style="color:#5ff7ff">⚔️ Combate</span> ·
+  <span style="color:#70ffb0">🌌 Exploración</span> ·
+  <span style="color:#ffd35a">👑 Progresión</span>
+</div>
+  <button id="pauseBtn">⏸️</button>
+  <div id="toast"></div>
+  <div id="touch">
+    <div class="touchGroup">
+      <button class="touchBtn" data-key="arrowup">▲</button><button class="touchBtn" data-key="none">•</button><button class="touchBtn" data-key="arrowright">▶</button>
+      <button class="touchBtn" data-key="arrowleft">◀</button><button class="touchBtn" data-key="arrowdown">▼</button><button class="touchBtn" data-key="none">•</button>
+    </div>
+    <div>
+      <button class="touchBtn big" data-action="attack">⚔️</button>
+      <button class="touchBtn big" data-action="skill">✨</button>
+    </div>
+  </div>
+</div>
+
+<div id="shop">
+ <div class="shopBox">
+   <h2>🏪 TIENDA SCORVEX</h2>
+   <p>Monedas: <b id="shopCoins">0</b></p>
+   <div class="items">
+    <div class="item"><b>❤️ Poción</b><p class="small">+30 vida</p><button data-buy="potion">Comprar · 30💰</button></div>
+    <div class="item"><b>⚔️ Espada</b><p class="small">+8 daño</p><button data-buy="sword">Comprar · 100💰</button></div>
+    <div class="item"><b>🛡️ Armadura</b><p class="small">+20 vida máxima</p><button data-buy="armor">Comprar · 120💰</button></div>
+    <div class="item"><b>⚡ Núcleo</b><p class="small">+20 energía máxima</p><button data-buy="core">Comprar · 150💰</button></div>
+   </div>
+   <button id="closeShop">Cerrar</button>
+ </div>
+</div>
+</div>
+
+<script>
+"use strict";
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+let W=1100,H=720,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);const r=canvas.getBoundingClientRect();canvas.width=Math.floor(r.width*dpr);canvas.height=Math.floor(r.height*dpr);W=canvas.width/dpr;H=canvas.height/dpr;ctx.setTransform(dpr,0,0,dpr,0,0)} window.addEventListener("resize",resize); resize();
+
+const keys={}; let running=false,paused=false,last=0,spawnTimer=0,bossSpawned=false;
+const player={x:550,y:360,r:20,speed:245,hp:100,maxHp:100,energy:100,maxEnergy:100,damage:25,level:1,xp:0,nextXp:100,score:0,coins:0,weapon:"Espada",attackCd:0,skillCd:0,inv:0};
+let enemies=[],particles=[],projectiles=[],drops=[],level=1,kills=0,missionGoal=5,missionDone=0;
+
+function save(){localStorage.setItem("scorvexSave",JSON.stringify({player:{...player},level,kills,missionGoal,missionDone,bossSpawned}));toast("💾 Progreso guardado");}
+function load(){const s=localStorage.getItem("scorvexSave");if(!s){toast("No hay partida guardada");return}const d=JSON.parse(s);Object.assign(player,d.player);level=d.level||1;kills=d.kills||0;missionGoal=d.missionGoal||5;missionDone=d.missionDone||0;bossSpawned=!!d.bossSpawned;showGame();toast("💾 Partida cargada")}
+function reset(){Object.assign(player,{x:W/2,y:H/2,r:20,speed:245,hp:100,maxHp:100,energy:100,maxEnergy:100,damage:25,level:1,xp:0,nextXp:100,score:0,coins:0,weapon:"Espada",attackCd:0,skillCd:0,inv:0});level=1;kills=0;missionGoal=5;missionDone=0;bossSpawned=false;enemies=[];particles=[];projectiles=[];drops=[];save();showGame()}
+function showGame(){document.getElementById("menu").classList.add("hidden");document.getElementById("pause").classList.add("hidden");document.getElementById("hud").classList.remove("hidden");running=true;paused=false;last=performance.now();requestAnimationFrame(loop)}
+function menu(){running=false;document.getElementById("hud").classList.add("hidden");document.getElementById("pause").classList.add("hidden");document.getElementById("menu").classList.remove("hidden")}
+function togglePause(){if(!running)return;paused=!paused;document.getElementById("pause").classList.toggle("hidden",!paused)}
+function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,1600)}
+
+document.getElementById("start").onclick=reset;document.getElementById("continue").onclick=load;
+document.getElementById("resume").onclick=togglePause;document.getElementById("restart").onclick=reset;document.getElementById("menuBtn").onclick=menu;document.getElementById("pauseBtn").onclick=togglePause;
+document.getElementById("how").onclick=()=>toast("WASD/Flechas mover · ESPACIO atacar · E habilidad · T tienda · P pausa");
+document.addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if(e.key===" "){e.preventDefault();attack()}if(e.key.toLowerCase()==="e")skill();if(e.key.toLowerCase()==="p")togglePause();if(e.key.toLowerCase()==="t")toggleShop()});
+document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+
+document.querySelectorAll(".touchBtn").forEach(b=>{
+ b.addEventListener("pointerdown",e=>{e.preventDefault();if(b.dataset.key&&b.dataset.key!=="none")keys[b.dataset.key]=true;if(b.dataset.action==="attack")attack();if(b.dataset.action==="skill")skill()});
+ b.addEventListener("pointerup",e=>{if(b.dataset.key)keys[b.dataset.key]=false});
+ b.addEventListener("pointerleave",e=>{if(b.dataset.key)keys[b.dataset.key]=false});
+});
+function toggleShop(){const s=document.getElementById("shop");if(!running)return;s.style.display=s.style.display==="flex"?"none":"flex";if(s.style.display==="flex")paused=true;document.getElementById("shopCoins").textContent=player.coins}
+document.getElementById("closeShop").onclick=()=>{document.getElementById("shop").style.display="none";paused=false};
+document.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
+function buy(type){let cost=0;if(type==="potion")cost=30;if(type==="sword")cost=100;if(type==="armor")cost=120;if(type==="core")cost=150;if(player.coins<cost){toast("❌ No tienes suficientes monedas");return}player.coins-=cost;if(type==="potion")player.hp=Math.min(player.maxHp,player.hp+30);if(type==="sword")player.damage+=8;if(type==="armor"){player.maxHp+=20;player.hp+=20}if(type==="core"){player.maxEnergy+=20;player.energy+=20}document.getElementById("shopCoins").textContent=player.coins;toast("✅ Compra realizada");save()}
+
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function spawnEnemy(type="normal"){
+ const side=Math.floor(Math.random()*4),m=50;let x,y;
+ if(side===0){x=m;y=Math.random()*H} else if(side===1){x=W-m;y=Math.random()*H} else if(side===2){x=Math.random()*W;y=m}else{x=Math.random()*W;y=H-m}
+ if(type==="boss"){enemies.push({x,y,r:48,hp:650,maxHp:650,speed:65,damage:18,type:"boss",hit:0});bossSpawned=true;toast("👑 ¡JEFE SCORVEX APARECIÓ!");return}
+ const elite=Math.random()<.16;enemies.push({x,y,r:elite?28:19,hp:elite?90:40,maxHp:elite?90:40,speed:elite?80:105,damage:elite?12:7,type:elite?"elite":"normal",hit:0});
+}
+function drop(x,y){if(Math.random()<.7)drops.push({x,y,r:9,type:Math.random()<.75?"coin":"heal"})}
+function burst(x,y,n=8){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*180,vy:(Math.random()-.5)*180,life:.45,r:Math.random()*4+2})}
+function attack(){
+ if(!running||paused||player.attackCd>0)return;
+ player.attackCd=.32;burst(player.x,player.y,5);
+ enemies.forEach(e=>{if(dist(player,e)<72){e.hp-=player.damage;e.hit=.15;burst(e.x,e.y,4)}});
+}
+function skill(){
+ if(!running||paused||player.skillCd>0||player.energy<35)return;
+ player.skillCd=3.2;player.energy-=35;
+ burst(player.x,player.y,25);
+ enemies.forEach(e=>{if(dist(player,e)<150)e.hp-=player.damage*2.5});
+ toast("✨ ¡HABILIDAD SCORVEX!");
+}
+function gainXp(v){player.xp+=v;while(player.xp>=player.nextXp){player.xp-=player.nextXp;player.level++;player.nextXp=Math.floor(player.nextXp*1.35);player.maxHp+=10;player.hp=player.maxHp;player.damage+=4;player.maxEnergy+=5;toast("⬆️ ¡Nivel "+player.level+"!")}}
+function update(dt){
+ player.attackCd=Math.max(0,player.attackCd-dt);player.skillCd=Math.max(0,player.skillCd-dt);player.inv=Math.max(0,player.inv-dt);
+ let dx=0,dy=0;if(keys.w||keys.arrowup)dy--;if(keys.s||keys.arrowdown)dy++;if(keys.a||keys.arrowleft)dx--;if(keys.d||keys.arrowright)dx++;
+ if(dx||dy){const l=Math.hypot(dx,dy);player.x+=dx/l*player.speed*dt;player.y+=dy/l*player.speed*dt}
+ player.x=Math.max(player.r,Math.min(W-player.r,player.x));player.y=Math.max(player.r,Math.min(H-player.r,player.y));
+ player.energy=Math.min(player.maxEnergy,player.energy+12*dt);
+ spawnTimer-=dt;if(spawnTimer<=0){spawnTimer=Math.max(.45,1.35-level*.07);if(enemies.filter(e=>e.type!=="boss").length<10+level*2)spawnEnemy()}
+ if(level>=3&&!bossSpawned&&kills>=12)spawnEnemy("boss");
+ enemies.forEach(e=>{const d=dist(e,player);if(d>e.r+player.r){e.x+=(player.x-e.x)/d*e.speed*dt;e.y+=(player.y-e.y)/d*e.speed*dt}else if(player.inv<=0){player.hp-=e.damage*dt;player.inv=.08}e.hit=Math.max(0,e.hit-dt)});
+ for(let i=enemies.length-1;i>=0;i--){if(enemies[i].hp<=0){const e=enemies[i];kills++;missionDone++;player.score+=e.type==="boss"?2000:e.type==="elite"?250:100;player.coins+=e.type==="boss"?100:e.type==="elite"?25:10;gainXp(e.type==="boss"?300:e.type==="elite"?60:25);drop(e.x,e.y);burst(e.x,e.y,12);enemies.splice(i,1);if(missionDone>=missionGoal){player.score+=500;player.coins+=50;missionGoal+=5;missionDone=0;toast("🏆 Misión completada +500 puntos")}if(e.type==="boss"){level++;bossSpawned=false;toast("👑 ¡JEFE DERROTADO! Nivel "+level)}}}
+ for(let i=drops.length-1;i>=0;i--){const d=drops[i];if(dist(d,player)<35){if(d.type==="coin")player.coins+=15;else player.hp=Math.min(player.maxHp,player.hp+25);drops.splice(i,1)}}
+ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt;if(p.life<=0)particles.splice(i,1)}
+ if(player.hp<=0){player.hp=0;gameOver();return}
+ if(kills>=5&&level===1){level=2;toast("🗺️ NIVEL 2 DESBLOQUEADO")}
+ if(kills>=12&&level===2){level=3;toast("🗺️ NIVEL 3 — TIERRA DEL JEFE")}
+ updateHud();
+}
+function gameOver(){running=false;document.getElementById("hud").classList.add("hidden");document.getElementById("pause").classList.remove("hidden");document.querySelector("#pause h1").textContent="💀 DERROTA";save()}
+function updateHud(){document.getElementById("level").textContent=player.level;document.getElementById("score").textContent=player.score;document.getElementById("coins").textContent=player.coins;document.getElementById("hpText").textContent=Math.ceil(player.hp)+"/"+player.maxHp;document.getElementById("hp").style.width=(player.hp/player.maxHp*100)+"%";document.getElementById("energy").style.width=(player.energy/player.maxEnergy*100)+"%";document.getElementById("xp").style.width=(player.xp/player.nextXp*100)+"%";document.getElementById("missionText").textContent=missionDone+"/"+missionGoal}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const grad=ctx.createRadialGradient(W/2,H/2,30,W/2,H/2,Math.max(W,H));grad.addColorStop(0,"#10243a");grad.addColorStop(1,"#050914");ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle="#ffffff0a";for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ drops.forEach(d=>{ctx.fillStyle=d.type==="coin"?"#ffd43b":"#45ff9a";ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="11px Arial";ctx.textAlign="center";ctx.fillText(d.type==="coin"?"$":"+",d.x,d.y+4)});
+ enemies.forEach(e=>{ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle=e.type==="boss"?"#a13cff":e.type==="elite"?"#ff8b32":"#e63755";ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,e.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-e.r*.3,-e.r*.15,4,0,Math.PI*2);ctx.arc(e.r*.3,-e.r*.15,4,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle="#222";ctx.fillRect(e.x-e.r,e.y-e.r-12,e.r*2,5);ctx.fillStyle="#49ff72";ctx.fillRect(e.x-e.r,e.y-e.r-12,e.r*2*Math.max(0,e.hp/e.maxHp),5)});
+ particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/.45);ctx.fillStyle="#5ff7ff";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1});
+ ctx.save();ctx.translate(player.x,player.y);ctx.fillStyle=player.inv>0?"#fff":"#21d9ff";ctx.shadowColor="#21d9ff";ctx.shadowBlur=22;ctx.beginPath();ctx.arc(0,0,player.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#07111e";ctx.beginPath();ctx.arc(-7,-3,4,0,Math.PI*2);ctx.arc(7,-3,4,0,Math.PI*2);ctx.fill();if(player.attackCd>.18){ctx.strokeStyle="#fff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,63,-.8,.8);ctx.stroke()}ctx.restore();
+ if(level===3&&!bossSpawned){ctx.fillStyle="#fff";ctx.font="bold 22px Arial";ctx.textAlign="center";ctx.fillText("DERROTA 12 ENEMIGOS PARA INVOCAR AL JEFE",W/2,H-30)}
+}
+function loop(t){if(!running)return;const dt=Math.min(.033,(t-last)/1000);last=t;if(!paused)update(dt);draw();requestAnimationFrame(loop)}
+setInterval(()=>{if(running&&!paused)localStorage.setItem("scorvexSave",JSON.stringify({player:{...player},level,kills,missionGoal,missionDone,bossSpawned}))},5000);
+menu();
+</script>
+</body>
+</html>
